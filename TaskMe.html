@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TaskMe - Todo App with Categories and Subtasks</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+max-width: 900px;
+margin: 20px auto;
+padding: 10px;
+background: #fcfcfe;
+}
+h1, h2 {
+text-align: center;
+color: #6B7280; /* pastel gray */
+}
+.input-group {
+display: flex;
+gap: 10px;
+flex-wrap: wrap;
+justify-content: center;
+margin-bottom: 20px;
+}
+input[type="text"], select, input[type="date"] {
+padding: 10px;
+font-size: 16px;
+min-width: 150px;
+border-radius: 8px;
+border: 1px solid #d1d5db;
+background: #f9fafb;
+transition: background 0.3s ease;
+}
+input[type="text"]:focus, select:focus, input[type="date"]:focus {
+background: #ffffff;
+outline: none;
+border-color: #a5b4fc;
+}
+button {
+background-color: #a5b4fc; /* pastel blue */
+color: #1e3a8a; /* dark pastel blue */
+font-weight: 600;
+border: none;
+padding: 10px 20px;
+border-radius: 8px;
+cursor: pointer;
+transition: background-color 0.3s ease;
+}
+button:hover {
+background-color: #818cf8;
+}
+button.clear {
+background-color: #fca5a5; /* pastel red */
+color: #7f1d1d; /* dark red */
+}
+button.clear:hover {
+background-color: #f87171;
+}
+.category-section {
+margin-bottom: 30px;
+}
+.category-title {
+font-size: 20px;
+font-weight: 700;
+margin-bottom: 10px;
+}
+.task-card {
+border-radius: 10px;
+padding: 15px;
+margin-bottom: 15px;
+background: #ffffff;
+box-shadow: 0 2px 8px rgba(156, 163, 175, 0.3);
+}
+.task-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.category-label {
+font-weight: 700;
+margin-left: 8px;
+}
+/* Pastel category colors */
+.category-workout { color: #ffd6d6; background-color: #ffeaea; border-radius: 5px; padding: 4px 8px; }
+.category-personal { color: #fdf1c7; background-color: #fef9db; border-radius: 5px; padding: 4px 8px; }
+.category-professional { color: #c7f0e6; background-color: #dbfaf3; border-radius: 5px; padding: 4px 8px; }
+.category-finance { color: #ffdfba; background-color: #fff1e0; border-radius: 5px; padding: 4px 8px; }
+.subtasks {
+margin-left: 25px;
+margin-top: 10px;
+}
+.subtask {
+margin-bottom: 5px;
+}
+.dash-container {
+margin-top: 40px;
+background: #f3f4f6;
+padding: 20px;
+border-radius: 12px;
+border: 2px solid #a5b4fc;
+}
+.progress-bar {
+width: 100%;
+height: 14px;
+border-radius: 12px;
+background: #e5e7eb;
+overflow: hidden;
+margin-top: 6px;
+}
+.progress-fill {
+height: 100%;
+background-color: #a5b4fc;
+width: 0;
+border-radius: 12px 0 0 12px;
+transition: width 0.3s ease;
+}
+.dashboard-items {
+display: flex;
+flex-wrap: wrap;
+justify-content: space-around;
+gap: 24px;
+}
+.dashboard-item {
+min-width: 150px;
+text-align: center;
+color: #374151;
+}
+@media (max-width: 600px) {
+.input-group {
+flex-direction: column;
+align-items: stretch;
+}
+}
+</style>
+</head>
+<body>
+
+<h1>TaskMe</h1>
+
+<div class="input-group">
+<input type="text" id="taskTitle" placeholder="Task Title" />
+<select id="taskCategory">
+<option value="workout">Workout</option>
+<option value="personal">Personal</option>
+<option value="professional">Professional</option>
+<option value="finance">Finance</option>
+</select>
+<input type="date" id="taskDate" />
+<button onclick="addTask()">Add Task</button>
+</div>
+
+<div class="input-group">
+<select id="filterCategory">
+<option value="">All Categories</option>
+<option value="workout">Workout</option>
+<option value="personal">Personal</option>
+<option value="professional">Professional</option>
+<option value="finance">Finance</option>
+</select>
+<select id="filterStatus">
+<option value="">All Statuses</option>
+<option value="pending">Pending</option>
+<option value="completed">Completed</option>
+</select>
+<input type="date" id="filterDate" />
+<button class="clear" onclick="clearFilters()">Clear Filters</button>
+</div>
+
+<div id="tasksGrouped"></div>
+
+<div class="dash-container">
+<h2>Progress Dashboard</h2>
+<div class="dashboard-items" id="dashboard"></div>
+</div>
+
+<script>
+const categories = {
+workout: { name: "Workout", colorClass: "category-workout" },
+personal: { name: "Personal", colorClass: "category-personal" },
+professional: { name: "Professional", colorClass: "category-professional" },
+finance: { name: "Finance", colorClass: "category-finance" },
+};
+
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function saveTasks() {
+localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function addTask() {
+const titleInput = document.getElementById("taskTitle");
+const categoryInput = document.getElementById("taskCategory");
+const dateInput = document.getElementById("taskDate");
+
+if (!titleInput.value.trim()) {
+alert("Please enter task title.");
+return;
+}
+if (!dateInput.value) {
+alert("Please select due date.");
+return;
+}
+
+const newTask = {
+id: Date.now().toString(),
+title: titleInput.value.trim(),
+category: categoryInput.value,
+dueDate: dateInput.value,
+status: "pending",
+subtasks: [],
+};
+
+tasks.push(newTask);
+saveTasks();
+
+titleInput.value = "";
+dateInput.value = "";
+
+renderTasks();
+renderDashboard();
+}
+
+function addSubtask(taskId) {
+const inputId = 'subtaskInput-' + taskId;
+const input = document.getElementById(inputId);
+const subtaskTitle = input.value.trim();
+if (!subtaskTitle) return;
+
+tasks = tasks.map(task => {
+if (task.id === taskId) {
+task.subtasks.push({
+id: Date.now().toString(),
+title: subtaskTitle,
+status: "pending",
+});
+}
+return task;
+});
+
+saveTasks();
+input.value = "";
+renderTasks();
+renderDashboard();
+}
+
+function toggleStatus(taskId, subtaskId = null) {
+tasks = tasks.map(task => {
+if (task.id === taskId) {
+if (subtaskId === null) {
+task.status = task.status === "pending" ? "completed" : "pending";
+} else {
+task.subtasks = task.subtasks.map(sub => {
+if (sub.id === subtaskId) {
+sub.status = sub.status === "pending" ? "completed" : "pending";
+}
+return sub;
+});
+}
+}
+return task;
+});
+saveTasks();
+renderTasks();
+renderDashboard();
+}
+
+function clearFilters() {
+document.getElementById("filterCategory").value = "";
+document.getElementById("filterStatus").value = "";
+document.getElementById("filterDate").value = "";
+
+// Reload daily template (today's date)
+const today = new Date().toISOString().slice(0, 10);
+document.getElementById("filterDate").value = today;
+
+renderTasks();
+}
+
+function getFilteredTasks() {
+const categoryFilter = document.getElementById("filterCategory").value;
+const statusFilter = document.getElementById("filterStatus").value;
+const dateFilter = document.getElementById("filterDate").value;
+
+return tasks.filter(task => {
+const matchCat = categoryFilter ? task.category === categoryFilter : true;
+const matchStatus = statusFilter ? task.status === statusFilter : true;
+const matchDate = dateFilter ? task.dueDate === dateFilter : true;
+return matchCat && matchStatus && matchDate;
+});
+}
+
+function renderTasks() {
+const container = document.getElementById("tasksGrouped");
+container.innerHTML = "";
+
+// Group tasks by category
+const filteredTasks = getFilteredTasks();
+
+const grouped = {};
+Object.keys(categories).forEach(catKey => grouped[catKey] = []);
+
+filteredTasks.forEach(task => {
+if (grouped[task.category]) grouped[task.category].push(task);
+});
+
+Object.keys(grouped).forEach(catKey => {
+const tasksInCat = grouped[catKey];
+if (tasksInCat.length === 0) return;
+
+const catSection = document.createElement("div");
+catSection.className = "category-section";
+
+const catTitle = document.createElement("div");
+catTitle.className = "category-title " + categories[catKey].colorClass;
+catTitle.textContent = categories[catKey].name;
+catSection.appendChild(catTitle);
+
+tasksInCat.forEach(task => {
+const taskDiv = document.createElement("div");
+taskDiv.className = "task-card";
+const taskTitleDecoration = task.status === "completed" ? "line-through" : "none";
+
+let subtasksHtml = "";
+task.subtasks.forEach(sub => {
+const subDeco = sub.status === "completed" ? "line-through" : "none";
+subtasksHtml += `
+<div class="subtask">
+<input type="checkbox" ${sub.status === "completed" ? "checked" : ""}
+onchange="toggleStatus('${task.id}', '${sub.id}')"/>
+<span style="text-decoration:${subDeco}">${sub.title}</span>
+</div>`;
+});
+
+taskDiv.innerHTML = `
+<div class="task-header">
+<div>
+<input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleStatus('${task.id}')" />
+<span style="font-weight:bold; font-size:18px; text-decoration:${taskTitleDecoration}">
+${task.title}
+</span>
+<small style="margin-left:10px; font-style: italic;">Due: ${task.dueDate}</small>
+</div>
+</div>
+<div class="subtasks">
+${subtasksHtml}
+<div style="margin-top:8px; display:flex; gap:8px;">
+<input type="text" id="subtaskInput-${task.id}" placeholder="Add subtask"/>
+<button onclick="addSubtask('${task.id}')"
+style="background-color:${getCategoryColor(task.category)}; color:#1e3a8a; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">Add</button>
+</div>
+</div>`;
+
+catSection.appendChild(taskDiv);
+});
+
+container.appendChild(catSection);
+});
+}
+
+function getCategoryColor(cat) {
+switch(cat) {
+case "workout":
+return "#FFB3B3"; // pastel red
+case "personal":
+return "#FEF3C7"; // pastel yellow
+case "professional":
+return "#CBF0E7"; // pastel teal
+case "finance":
+return "#FFE4C7"; // pastel orange
+default:
+return "#ccc";
+}
+}
+
+function renderDashboard() {
+const container = document.getElementById("dashboard");
+container.innerHTML = "";
+
+for (const catKey in categories) {
+const catTasks = tasks.filter(t => t.category === catKey);
+const total = catTasks.length;
+const completed = catTasks.filter(t => t.status === "completed").length;
+const percent = total ? Math.round((completed / total) * 100) : 0;
+
+const dashItem = document.createElement("div");
+dashItem.className = "dashboard-item";
+dashItem.innerHTML = `
+<div style="font-size:20px; font-weight:bold; color:${getCategoryColor(catKey)};">${percent}%</div>
+<div>${categories[catKey].name} Completed</div>
+<div class="progress-bar" aria-label="${percent}% complete">
+<div class="progress-fill" style="width:${percent}%; background-color:${getCategoryColor(catKey)}"></div>
+</div>`;
+container.appendChild(dashItem);
+}
+
+// Overall
+const overallTotal = tasks.length;
+const overallCompleted = tasks.filter(t => t.status === "completed").length;
+const overallPercent = overallTotal ? Math.round((overallCompleted / overallTotal) * 100) : 0;
+
+const overallDiv = document.createElement("div");
+overallDiv.className = "dashboard-item";
+overallDiv.innerHTML = `
+<div style="font-size:24px; font-weight:bold; color:#a5b4fc;">${overallPercent}%</div>
+<div>Overall Completed</div>
+<div class="progress-bar" aria-label="${overallPercent}% complete">
+<div class="progress-fill" style="width:${overallPercent}%; background-color:#a5b4fc"></div>
+</div>`;
+container.appendChild(overallDiv);
+}
+
+// Initialize filter date to today for daily template loading
+function init() {
+const today = new Date().toISOString().slice(0, 10);
+document.getElementById("filterDate").value = today;
+document.getElementById("taskDate").value = today;
+renderTasks();
+renderDashboard();
+}
+
+// Event listeners for filter changes
+document.getElementById("filterCategory").addEventListener("change", renderTasks);
+document.getElementById("filterStatus").addEventListener("change", renderTasks);
+document.getElementById("filterDate").addEventListener("change", renderTasks);
+
+// Run initialization
+init();
+</script>
+
+</body>
+</html>
