@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TaskMe - Todo App with Year, Month, Date Filtering</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0; padding: 0;
+  background: #fcfcfe;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+#sidebar {
+  width: 280px;
+  border-right: 2px solid #a5b4fc;
+  padding: 15px;
+  background: #fefefe;
+  overflow-y: auto;
+}
+#sidebar h2 {
+  color: #6B7280;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+#sidebar .input-group {
+  margin-bottom: 16px;
+}
+#sidebar input[type="date"],
+#sidebar select {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.3s ease;
+}
+#sidebar input[type="date"]:focus,
+#sidebar select:focus {
+  background: #fff;
+  outline: none;
+  border-color: #a5b4fc;
+}
+#sidebar label.all-dates {
+  font-weight: 600;
+  user-select: none;
+  cursor: pointer;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#sidebar button.clear {
+  background-color: #fca5a5;
+  color: #7f1d1d;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+#sidebar button.clear:hover {
+  background-color: #f87171;
+}
+.year-group, .month-group, .date-group {
+  margin-bottom: 10px;
+}
+.year-title, .month-title, .date-title {
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  transition: background-color 0.3s ease;
+}
+.year-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  background-color: #e0e7ff;
+  color: #6b7280;
+}
+.year-title:hover {
+  background-color: #a5b4fcaa;
+  color: white;
+}
+.month-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  margin-left: 16px;
+}
+.month-title:hover {
+  background-color: #c7d2fe;
+  color: #1e3a8a;
+}
+.date-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  background-color: #f9fafb;
+  color: #374151;
+  margin-left: 32px;
+}
+.date-title:hover {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+.sidebar-tasks-container {
+  display: none;
+  margin-left: 40px;
+  max-height: 280px;
+  overflow-y: auto;
+  border-left: 2px solid #a5b4fc55;
+  padding-left: 8px;
+}
+.sidebar-task {
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background-color: #f3f4f6;
+  font-size: 14px;
+  border-radius: 6px;
+  user-select: none;
+}
+.sidebar-task.completed {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+.selected {
+  background-color: #a5b4fc !important;
+  color: white !important;
+}
+/* Main area */
+#mainContent {
+  flex-grow: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: 20px;
+}
+h1, h2 {
+  text-align: center;
+  color: #6b7280;
+}
+.input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+input[type="text"], select, input[type="date"] {
+  padding: 10px;
+  font-size: 16px;
+  min-width: 150px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  transition: background 0.3s ease;
+}
+input[type="text"]:focus, select:focus, input[type="date"]:focus {
+  background: #fff;
+  outline: none;
+  border-color: #a5b4fc;
+}
+button {
+  background-color: #a5b4fc;
+  color: #1e3a8a;
+  font-weight: 600;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+button:hover {
+  background-color: #818cf8;
+}
+.category-section {
+  margin-bottom: 30px;
+}
+.category-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.category-workout {color: #ff9090;}
+.category-personal {color: #fff3a0;}
+.category-professional {color: #90ffd0;}
+.category-finance {color: #ffcc99;}
+.subtasks {
+  margin-left: 25px;
+  margin-top: 10px;
+}
+.subtask {
+  margin-bottom: 5px;
+}
+.dash-container {
+  margin-top: 40px;
+  border: 2px solid #a5b4fc;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+.progress-bar {
+  width: 100%;
+  height: 14px;
+  border-radius: 12px;
+  background: #e5e7eb;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background-color: #a5b4fc;
+  width: 0;
+  border-radius: 12px 0 0 12px;
+  transition: width 0.3s ease;
+}
+.dashboard-items {
+  display: flex;
+  gap: 24px;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+.dashboard-item {
+  min-width: 150px;
+  color: #374151;
+  text-align: center;
+}
+.filter-indicator {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  body {flex-direction: column; height: auto;}
+  #sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 2px solid #a5b4fc;
+  }
+  #mainContent {
+    max-width: 100%;
+    height: auto;
+  }
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Filters</h2>
+  <div class="input-group">
+    <input type="date" id="filterDate" />
+    <label class="all-dates"><input type="checkbox" id="filterAllDates" /> Show All Dates</label>
+  </div>
+  <div class="input-group">
+    <select id="filterCategory">
+      <option value="">All Categories</option>
+      <option value="workout">Workout</option>
+      <option value="personal">Personal</option>
+      <option value="professional">Professional</option>
+      <option value="finance">Finance</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <select id="filterStatus">
+      <option value="">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="completed">Completed</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <button class="clear" onclick="clearFilters()">Clear Filters</button>
+  </div>
+
+  <h2>Tasks by Date</h2>
+  <div id="tasksByDate"></div>
+</div>
+
+<div id="mainContent">
+  <h1>TaskMe</h1>
+
+  <div class="input-group">
+    <input type="text" id="taskTitle" placeholder="Task Title" />
+    <select id="taskCategory">
+      <option value="workout">Workout</option>
+      <option value="personal">Personal</option>
+      <option value="professional">Professional</option>
+      <option value="finance">Finance</option>
+    </select>
+    <input type="date" id="taskDate" />
+    <button onclick="addTask()">Add Task</button>
+  </div>
+
+  <div id="tasksGrouped"></div>
+
+  <div class="dash-container">
+    <h2>Progress Dashboard</h2>
+    <div class="filter-indicator" id="filterIndicator"></div>
+    <div class="dashboard-items" id="dashboard"></div>
+  </div>
+</div>
+
+<script>
+const categories = {
+  workout: { name: "Workout", colorClass: "category-workout" },
+  personal: { name: "Personal", colorClass: "category-personal" },
+  professional: { name: "Professional", colorClass: "category-professional" },
+  finance: { name: "Finance", colorClass: "category-finance" },
+};
+
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+// Current filter state: {year, month (0-11 or null), day (String YYYY-MM-DD or null)}
+let currentFilter = {
+  year: null,
+  month: null,
+  day: null
+};
+
+let expandedYears = new Set();
+let expandedMonths = new Set();
+
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function addTask() {
+  const titleInput = document.getElementById("taskTitle");
+  const categoryInput = document.getElementById("taskCategory");
+  const dateInput = document.getElementById("taskDate");
+
+  if (!titleInput.value.trim()) {
+    alert("Please enter task title.");
+    return;
+  }
+  if (!dateInput.value) {
+    alert("Please select due date.");
+    return;
+  }
+
+  tasks.push({
+    id: Date.now().toString(),
+    title: titleInput.value.trim(),
+    category: categoryInput.value,
+    dueDate: dateInput.value,
+    status: "pending",
+    subtasks: [],
+  });
+
+  saveTasks();
+
+  titleInput.value = "";
+  dateInput.value = new Date().toISOString().slice(0,10);
+
+  renderAll();
+}
+
+function addSubtask(taskId) {
+  const input = document.getElementById('subtaskInput-' + taskId);
+  const val = input.value.trim();
+  if (!val) return;
+  tasks.forEach(t => {
+    if (t.id === taskId) {
+      t.subtasks.push({id: Date.now().toString(), title: val, status: "pending"});
+    }
+  });
+  saveTasks();
+  input.value = "";
+  renderAll();
+}
+
+function toggleStatus(taskId, subtaskId=null) {
+  tasks.forEach(task => {
+    if (task.id === taskId) {
+      if (subtaskId === null) {
+        task.status = (task.status === "pending") ? "completed" : "pending";
+      } else {
+        task.subtasks.forEach(sub => {
+          if (sub.id === subtaskId) {
+            sub.status = (sub.status === "pending") ? "completed" : "pending";
+          }
+        });
+      }
+    }
+  });
+  saveTasks();
+  renderAll();
+}
+
+function clearFilters() {
+  currentFilter = {year: null, month: null, day: null};
+  expandedYears.clear();
+  expandedMonths.clear();
+
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById("filterDate").value = today;
+  document.getElementById("filterAllDates").checked = true;
+  document.getElementById("filterDate").disabled = true;
+  document.getElementById("filterCategory").value = "";
+  document.getElementById("filterStatus").value = "";
+
+  renderAll();
+}
+
+function getFilteredTasks() {
+  const categoryFilter = document.getElementById("filterCategory").value;
+  const statusFilter = document.getElementById("filterStatus").value;
+  const showAllDates = document.getElementById("filterAllDates").checked;
+
+  return tasks.filter(t => {
+    // Category filter
+    if (categoryFilter && t.category !== categoryFilter) return false;
+    // Status filter
+    if (statusFilter && t.status !== statusFilter) return false;
+
+    if (showAllDates || (!currentFilter.year && !currentFilter.month && !currentFilter.day)) return true;
+
+    const taskDate = new Date(t.dueDate + 'T00:00:00Z');
+    if (currentFilter.year && taskDate.getUTCFullYear() !== currentFilter.year) return false;
+    if (currentFilter.month !== null && taskDate.getUTCMonth() !== currentFilter.month) return false;
+    if (currentFilter.day && t.dueDate !== currentFilter.day) return false;
+
+    return true;
+  });
+}
+
+function renderTasks() {
+  const container = document.getElementById("tasksGrouped");
+  container.innerHTML = "";
+  const filtered = getFilteredTasks();
+
+  if (filtered.length === 0){
+    container.innerHTML = "<p style='text-align:center;color:#6b7280;'>No tasks match the filters.</p>";
+    return;
+  }
+
+  // Group by category
+  const groupedByCat = {};
+  Object.keys(categories).forEach(k => groupedByCat[k] = []);
+  filtered.forEach(t => groupedByCat[t.category].push(t));
+
+  Object.keys(groupedByCat).forEach(cat => {
+    if (groupedByCat[cat].length === 0) return;
+
+    const sec = document.createElement("div");
+    sec.className = "category-section";
+
+    const title = document.createElement("div");
+    title.className = "category-title " + categories[cat].colorClass;
+    title.textContent = categories[cat].name;
+    sec.appendChild(title);
+
+    groupedByCat[cat].forEach(task => {
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task-card";
+
+      const decoration = (task.status === "completed") ? "line-through" : "none";
+
+      let subtasksHTML = "";
+      task.subtasks.forEach(sub => {
+        subtasksHTML += `
+          <div class="subtask">
+            <input type="checkbox" ${sub.status === "completed" ? "checked" : ""} onchange="toggleStatus('${task.id}','${sub.id}')" />
+            <span style="text-decoration:${sub.status === "completed" ? "line-through" : "none"}">${sub.title}</span>
+          </div>`;
+      });
+
+      taskDiv.innerHTML = `
+        <div>
+          <input type="checkbox" ${task.status === "completed" ? "checked" : ""} onchange="toggleStatus('${task.id}')" />
+          <span style="font-weight:bold; font-size:18px; text-decoration:${decoration}">${task.title}</span>
+          <small style="margin-left:10px; font-style: italic;">Due: ${task.dueDate}</small>
+        </div>
+        <div class="subtasks">
+          ${subtasksHTML}
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <input type="text" id="subtaskInput-${task.id}" placeholder="Add subtask"/>
+            <button style="background-color:${getCategoryColor(task.category)}; color:#1e3a8a; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;" onclick="addSubtask('${task.id}')">Add</button>
+          </div>
+        </div>`;
+
+      sec.appendChild(taskDiv);
+    });
+    container.appendChild(sec);
+  });
+}
+
+function getCategoryColor(cat) {
+  switch(cat) {
+    case "workout": return "#FFB3B3";
+    case "personal": return "#FEF3C7";
+    case "professional": return "#CBF0E7";
+    case "finance": return "#FFE4C7";
+    default: return "#ccc";
+  }
+}
+
+function getMonthName(m) {
+  return new Date(2000,m).toLocaleString('default', {month:'long'});
+}
+
+function getFilterPeriodText() {
+  if (currentFilter.day) {
+    return `Daily Progress - ${currentFilter.day}`;
+  } else if (currentFilter.month !== null && currentFilter.year) {
+    return `Monthly Progress - ${getMonthName(currentFilter.month)} ${currentFilter.year}`;
+  } else if (currentFilter.year) {
+    return `Yearly Progress - ${currentFilter.year}`;
+  } else {
+    return "Overall Progress - All Tasks";
+  }
+}
+
+function renderDashboard(){
+  const container = document.getElementById("dashboard");
+  const indicatorContainer = document.getElementById("filterIndicator");
+  
+  container.innerHTML = "";
+  indicatorContainer.textContent = getFilterPeriodText();
+
+  // Use filtered tasks for dashboard calculations
+  const filteredTasks = getFilteredTasks();
+
+  for (const cat in categories) {
+    const catTasks = filteredTasks.filter(t => t.category === cat);
+    const completed = catTasks.filter(t => t.status === "completed").length;
+    const total = catTasks.length;
+    const percent = total ? Math.round(completed/total*100) : 0;
+
+    const div = document.createElement("div");
+    div.className = "dashboard-item";
+    div.innerHTML = `
+    <div style="font-size:20px; font-weight:bold; color:${getCategoryColor(cat)}">${percent}%</div>
+    <div>${categories[cat].name} Completed</div>
+    <div style="font-size:12px; color:#9ca3af;">(${completed}/${total} tasks)</div>
+    <div class="progress-bar" aria-label="${percent}% complete">
+      <div class="progress-fill" style="width:${percent}%; background-color:${getCategoryColor(cat)}"></div>
+    </div>`;
+    container.appendChild(div);
+  }
+
+  const overallCompleted = filteredTasks.filter(t => t.status === "completed").length;
+  const overallTotal = filteredTasks.length;
+  const overallPercent = overallTotal ? Math.round(overallCompleted / overallTotal * 100) : 0;
+
+  const overallDiv = document.createElement("div");
+  overallDiv.className = "dashboard-item";
+  overallDiv.innerHTML = `
+  <div style="font-size:24px; font-weight:bold; color:#a5b4fc;">${overallPercent}%</div>
+  <div>Overall Completed</div>
+  <div style="font-size:12px; color:#9ca3af;">(${overallCompleted}/${overallTotal} tasks)</div>
+  <div class="progress-bar" aria-label="${overallPercent}% complete">
+    <div class="progress-fill" style="width:${overallPercent}%; background-color:#a5b4fc"></div>
+  </div>`;
+  container.appendChild(overallDiv);
+}
+
+function groupTasksByYearMonthDate() {
+  const grouped = {};
+  tasks.forEach(t => {
+    const d = new Date(t.dueDate + 'T00:00:00Z');
+    const y = d.getUTCFullYear();
+    const m = d.getUTCMonth();
+    if (!grouped[y]) grouped[y] = {};
+    if (!grouped[y][m]) grouped[y][m] = {};
+    if (!grouped[y][m][t.dueDate]) grouped[y][m][t.dueDate] = [];
+    grouped[y][m][t.dueDate].push(t);
+  });
+  return grouped;
+}
+
+function clearAllSelectionHighlight(){
+  document.querySelectorAll('.year-title, .month-title, .date-title').forEach(el=>el.classList.remove('selected'));
+}
+
+function renderTasksByYearMonthDate(){
+  const container = document.getElementById('tasksByDate');
+  container.innerHTML = '';
+
+  const grouped = groupTasksByYearMonthDate();
+
+  const years = Object.keys(grouped).sort((a,b)=>b-a);
+
+  if(years.length===0){
+    container.innerHTML = "<p>No tasks available</p>";
+    return;
+  }
+
+  years.forEach(year=>{
+    const yearGroup = document.createElement('div');
+    yearGroup.className = 'year-group';
+
+    const yearTitle = document.createElement('div');
+    yearTitle.className = 'year-title';
+    yearTitle.textContent = year;
+    yearTitle.style.userSelect='none';
+
+    if(currentFilter.year === +year && currentFilter.month === null && currentFilter.day === null){
+      yearTitle.classList.add('selected');
+    }
+
+    yearTitle.onclick = () => {
+      clearAllSelectionHighlight();
+      // Toggle expansion for year
+      if(expandedYears.has(year)){
+        expandedYears.delete(year);
+        currentFilter = {year:null,month:null,day:null};
+      } else {
+        expandedYears.clear();
+        expandedMonths.clear();
+        expandedYears.add(year);
+        currentFilter = {year:+year, month:null, day:null};
+      }
+      expandedMonths.clear();
+      renderAll();
+    };
+
+    const monthsContainer = document.createElement('div');
+    monthsContainer.className = 'months-container';
+    monthsContainer.style.marginLeft = '8px';
+    monthsContainer.style.display = expandedYears.has(year) ? 'block' : 'none';
+
+    const months = Object.keys(grouped[year]).sort((a,b)=>a-b);
+
+    months.forEach(month=>{
+      const monthGroup = document.createElement('div');
+      monthGroup.className = 'month-group';
+
+      const monthTitle = document.createElement('div');
+      monthTitle.className = 'month-title';
+      monthTitle.textContent = getMonthName(+month);
+      monthTitle.style.userSelect = 'none';
+
+      if(currentFilter.year === +year && currentFilter.month === +month && currentFilter.day === null){
+        monthTitle.classList.add('selected');
+      }
+
+      monthTitle.onclick = () => {
+        clearAllSelectionHighlight();
+        if(expandedMonths.has(month)){
+          expandedMonths.delete(month);
+          currentFilter = {year:+year, month:null, day:null};
+        } else {
+          expandedMonths.add(month);
+          currentFilter = {year:+year, month:+month, day:null};
+        }
+        renderAll();
+      };
+
+      const datesContainer = document.createElement('div');
+      datesContainer.className = 'dates-container';
+      datesContainer.style.display = expandedMonths.has(month) ? 'block' : 'none';
+      datesContainer.style.marginLeft = '16px';
+
+      const dates = Object.keys(grouped[year][month]).sort();
+
+      dates.forEach(date => {
+        const dateGroup = document.createElement('div');
+        dateGroup.className = 'date-group';
+
+        const dateTitle = document.createElement('div');
+        dateTitle.className = 'date-title';
+        dateTitle.textContent = date;
+        dateTitle.style.userSelect = 'none';
+
+        if(currentFilter.year === +year && currentFilter.month === +month && currentFilter.day === date){
+          dateTitle.classList.add('selected');
+        }
+
+        dateTitle.onclick = () => {
+          clearAllSelectionHighlight();
+          currentFilter = {year:+year, month:+month, day:date};
+          expandedYears.add(year);
+          expandedMonths.add(month);
+          renderAll();
+        };
+
+        // Tasks container under a date in sidebar:
+        const tasksContainer = document.createElement('div');
+        tasksContainer.className = 'sidebar-tasks-container';
+        tasksContainer.style.display = (currentFilter.year === +year && currentFilter.month === +month && currentFilter.day === date) ? 'block' : 'none';
+
+        grouped[year][month][date].forEach(t=>{
+          const taskDiv = document.createElement('div');
+          taskDiv.className = 'sidebar-task';
+          if(t.status === 'completed') taskDiv.classList.add('completed');
+          taskDiv.textContent = `[${categories[t.category].name}] ${t.title}`;
+          tasksContainer.appendChild(taskDiv);
+        });
+
+        dateGroup.appendChild(dateTitle);
+        dateGroup.appendChild(tasksContainer);
+        datesContainer.appendChild(dateGroup);
+      });
+
+      monthGroup.appendChild(monthTitle);
+      monthGroup.appendChild(datesContainer);
+      monthsContainer.appendChild(monthGroup);
+    });
+
+    yearGroup.appendChild(yearTitle);
+    yearGroup.appendChild(monthsContainer);
+    container.appendChild(yearGroup);
+  });
+}
+
+function renderAll(){
+  // Control filter UI inputs consistency with currentFilter
+
+  if(currentFilter.day !== null){
+    document.getElementById("filterAllDates").checked = false;
+    document.getElementById("filterDate").disabled = false;
+    document.getElementById("filterDate").value = currentFilter.day;
+  } else if(currentFilter.month !== null){
+    document.getElementById("filterAllDates").checked = true;
+    document.getElementById("filterDate").disabled = true;
+    document.getElementById("filterDate").value = '';
+  } else if(currentFilter.year !== null){
+    document.getElementById("filterAllDates").checked = true;
+    document.getElementById("filterDate").disabled = true;
+    document.getElementById("filterDate").value = '';
+  } else {
+    document.getElementById("filterAllDates").checked = true;
+    document.getElementById("filterDate").disabled = true;
+    document.getElementById("filterDate").value = '';
+  }
+
+  renderTasks();
+  renderDashboard();
+  renderTasksByYearMonthDate();
+}
+
+document.getElementById("filterCategory").addEventListener("change", () => {
+  renderAll();
+});
+document.getElementById("filterStatus").addEventListener("change", () => {
+  renderAll();
+});
+document.getElementById("filterDate").addEventListener("change", () => {
+  if(document.getElementById("filterAllDates").checked) return;
+  currentFilter = {
+    year: null,
+    month: null,
+    day: document.getElementById("filterDate").value || null
+  };
+  expandedYears.clear();
+  expandedMonths.clear();
+  renderAll();
+});
+document.getElementById("filterAllDates").addEventListener("change", (e) => {
+  const checked = e.target.checked;
+  if(checked){
+    document.getElementById("filterDate").disabled = true;
+    currentFilter = {year:null, month:null, day:null};
+  } else {
+    document.getElementById("filterDate").disabled = false;
+    if(!document.getElementById("filterDate").value){
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById("filterDate").value = today;
+    }
+    currentFilter = {
+      year: null,
+      month: null,
+      day: document.getElementById("filterDate").value
+    };
+  }
+  expandedYears.clear();
+  expandedMonths.clear();
+  renderAll();
+});
+
+function init(){
+  // Initialize default filter to all dates shown
+  currentFilter = {year:null, month:null, day:null};
+  expandedYears.clear();
+  expandedMonths.clear();
+
+  document.getElementById("filterAllDates").checked = true;
+  document.getElementById("filterDate").disabled = true;
+
+  document.getElementById("taskDate").value = new Date().toISOString().slice(0,10);
+
+  renderAll();
+}
+
+init();
+</script>
+
+</body>
+</html>
